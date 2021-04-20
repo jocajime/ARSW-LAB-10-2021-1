@@ -38,39 +38,37 @@ Cuando un conjunto de usuarios consulta un enésimo número (superior a 1000000)
 
 4. Para instalar la aplicación adjunta al Laboratorio, suba la carpeta `FibonacciApp` a un repositorio al cual tenga acceso y ejecute estos comandos dentro de la VM:
 
-    `git clone <your_repo>`
-
-    `cd <your_repo>/FibonacciApp`
-
-    `npm install`
+![Imágen 1](images/part1/installfibo.png)
 
 5. Para ejecutar la aplicación puede usar el comando `npm FibinacciApp.js`, sin embargo una vez pierda la conexión ssh la aplicación dejará de funcionar. Para evitar ese compartamiento usaremos *forever*. Ejecute los siguientes comando dentro de la VM.
 
-    `npm install forever -g`
-
-    `forever start FibinacciApp.js`
+![Imágen 1](images/part1/foreverfibo.png)
 
 6. Antes de verificar si el endpoint funciona, en Azure vaya a la sección de *Networking* y cree una *Inbound port rule* tal como se muestra en la imágen. Para verificar que la aplicación funciona, use un browser y user el endpoint `http://xxx.xxx.xxx.xxx:3000/fibonacci/6`. La respuesta debe ser `The answer is 8`.
 
-![](images/part1/part1-vm-3000InboudRule.png)
+![](images/part1/port3000.png)
+
+![Imágen 1](images/part1/navegador.png)
 
 7. La función que calcula en enésimo número de la secuencia de Fibonacci está muy mal construido y consume bastante CPU para obtener la respuesta. Usando la consola del Browser documente los tiempos de respuesta para dicho endpoint usando los siguintes valores:
-    * 1000000
-    * 1010000
-    * 1020000
-    * 1030000
-    * 1040000
-    * 1050000
-    * 1060000
-    * 1070000
-    * 1080000
-    * 1090000    
+
+    * 1000000: 22.74s
+    * 1010000: 23.12s
+    * 1020000: 24.14s
+    * 1030000: 25.20s
+    * 1040000: 25.05s
+    * 1050000: 25.70s 
+    * 1060000: 25.94s
+    * 1070000: 27.16s
+    * 1080000: 28.17s
+    * 1090000: 28.07s
 
 8. Dírijase ahora a Azure y verifique el consumo de CPU para la VM. (Los resultados pueden tardar 5 minutos en aparecer).
 
-![Imágen 2](images/part1/part1-vm-cpu.png)
+![Imágen 2](images/part1/cpu.png)
 
 9. Ahora usaremos Postman para simular una carga concurrente a nuestro sistema. Siga estos pasos.
+
     * Instale newman con el comando `npm install newman -g`. Para conocer más de Newman consulte el siguiente [enlace](https://learning.getpostman.com/docs/postman/collection-runs/command-line-integration-with-newman/).
     * Diríjase hasta la ruta `FibonacciApp/postman` en una maquina diferente a la VM.
     * Para el archivo `[ARSW_LOAD-BALANCING_AZURE].postman_environment.json` cambie el valor del parámetro `VM1` para que coincida con la IP de su VM.
@@ -81,17 +79,52 @@ Cuando un conjunto de usuarios consulta un enésimo número (superior a 1000000)
     newman run ARSW_LOAD-BALANCING_AZURE.postman_collection.json -e [ARSW_LOAD-BALANCING_AZURE].postman_environment.json -n 10
     ```
 
+![Imágen 2](images/part1/postmanprueba.png)
+
+![Imágen 2](images/part1/cpupostman.png)
+
 10. La cantidad de CPU consumida es bastante grande y un conjunto considerable de peticiones concurrentes pueden hacer fallar nuestro servicio. Para solucionarlo usaremos una estrategia de Escalamiento Vertical. En Azure diríjase a la sección *size* y a continuación seleccione el tamaño `B2ms`.
 
 ![Imágen 3](images/part1/part1-vm-resize.png)
 
 11. Una vez el cambio se vea reflejado, repita el paso 7, 8 y 9.
+
+	* Paso 7:
+
+	    * 1000000: 21.95s
+	    * 1010000: 22.44s
+	    * 1020000: 22.75s
+	    * 1030000: 23.54s
+	    * 1040000: 23.71s
+	    * 1050000: 25.25s
+	    * 1060000: 24.72s
+	    * 1070000: 24.33s
+	    * 1080000: 25.66s
+	    * 1090000: 26.12s
+  
+	* Paso 8:
+
+![Imágen 3](images/part1/cpupunto118.png)
+
+	* Paso 9:
+
+![Imágen 3](images/part1/newmanpunto1.png)
+
+![Imágen 3](images/part1/cpupunto119.png)
+
 12. Evalue el escenario de calidad asociado al requerimiento no funcional de escalabilidad y concluya si usando este modelo de escalabilidad logramos cumplirlo.
 13. Vuelva a dejar la VM en el tamaño inicial para evitar cobros adicionales.
 
 **Preguntas**
 
 1. ¿Cuántos y cuáles recursos crea Azure junto con la VM?
+
+	- Storage Account
+	- Public IP Address
+	- Network Security Group
+	- Network Interface
+	- Disk
+
 2. ¿Brevemente describa para qué sirve cada recurso?
 3. ¿Al cerrar la conexión ssh con la VM, por qué se cae la aplicación que ejecutamos con el comando `npm FibonacciApp.js`? ¿Por qué debemos crear un *Inbound port rule* antes de acceder al servicio?
 4. Adjunte tabla de tiempos e interprete por qué la función tarda tando tiempo.
@@ -113,23 +146,23 @@ Antes de continuar puede eliminar el grupo de recursos anterior para evitar gast
 
 1. El Balanceador de Carga es un recurso fundamental para habilitar la escalabilidad horizontal de nuestro sistema, por eso en este paso cree un balanceador de carga dentro de Azure tal cual como se muestra en la imágen adjunta.
 
-![](images/part2/part2-lb-create.png)
+![](images/part2/loadblancer.png)
 
 2. A continuación cree un *Backend Pool*, guiese con la siguiente imágen.
 
-![](images/part2/part2-lb-bp-create.png)
+![](images/part2/backendpool.png)
 
 3. A continuación cree un *Health Probe*, guiese con la siguiente imágen.
 
-![](images/part2/part2-lb-hp-create.png)
+![](images/part2/healthprobes.png)
 
 4. A continuación cree un *Load Balancing Rule*, guiese con la siguiente imágen.
 
-![](images/part2/part2-lb-lbr-create.png)
+![](images/part2/reglasequilibrio.png)
 
 5. Cree una *Virtual Network* dentro del grupo de recursos, guiese con la siguiente imágen.
 
-![](images/part2/part2-vn-create.png)
+![](images/part2/virtualnetwork.png)
 
 #### Crear las maquinas virtuales (Nodos)
 
@@ -137,7 +170,7 @@ Ahora vamos a crear 3 VMs (VM1, VM2 y VM3) con direcciones IP públicas standar 
 
 1. En la configuración básica de la VM guíese por la siguiente imágen. Es importante que se fije en la "Avaiability Zone", donde la VM1 será 1, la VM2 será 2 y la VM3 será 3.
 
-![](images/part2/part2-vm-create1.png)
+![](images/part2/virtualmachines.png)
 
 2. En la configuración de networking, verifique que se ha seleccionado la *Virtual Network*  y la *Subnet* creadas anteriormente. Adicionalmente asigne una IP pública y no olvide habilitar la redundancia de zona.
 
@@ -174,9 +207,15 @@ Realice este proceso para las 3 VMs, por ahora lo haremos a mano una por una, si
 1. Porsupuesto el endpoint de acceso a nuestro sistema será la IP pública del balanceador de carga, primero verifiquemos que los servicios básicos están funcionando, consuma los siguientes recursos:
 
 ```
-http://52.155.223.248/
-http://52.155.223.248/fibonacci/1
+http://20.67.219.19/
+http://20.67.219.19/fibonacci/1
 ```
+
+![](images/part2/navegadorpart2.png)
+
+![](images/part2/navegadorpart2segundolink.png)
+
+
 
 2. Realice las pruebas de carga con `newman` que se realizaron en la parte 1 y haga un informe comparativo donde contraste: tiempos de respuesta, cantidad de peticiones respondidas con éxito, costos de las 2 infraestrucruras, es decir, la que desarrollamos con balanceo de carga horizontal y la que se hizo con una maquina virtual escalada.
 
